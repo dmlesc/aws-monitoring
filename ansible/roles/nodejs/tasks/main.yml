@@ -1,0 +1,30 @@
+---
+# file: roles/nodejs/tasks/main.yml
+
+- name: install apt-transport-https
+  apt:
+    name: apt-transport-https
+    state: present
+
+- name: add nodesource gpg key
+  apt_key:
+    url: "https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
+    state: present
+
+- name: add deb nodesource repository
+  apt_repository:
+    repo: deb https://deb.nodesource.com/node_9.x xenial main
+    state: present
+    filename: '/etc/apt/sources.list.d/nodesource.list'
+
+- name: add deb-src nodesource repository
+  apt_repository:
+    repo: deb-src https://deb.nodesource.com/node_9.x xenial main
+    state: present
+    filename: '/etc/apt/sources.list.d/nodesource.list'
+
+- name: install nodejs
+  apt:
+    update_cache: yes
+    name: nodejs
+    state: present

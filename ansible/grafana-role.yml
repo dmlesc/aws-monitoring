@@ -1,0 +1,7 @@
+---
+# file: grafana-role.yml
+
+- hosts: grafana
+  become: true
+  roles:
+    - grafana

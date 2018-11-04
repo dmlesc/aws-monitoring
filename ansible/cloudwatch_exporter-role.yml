@@ -1,0 +1,7 @@
+---
+# file: cloudwatch_exporter-role.yml
+
+- hosts: cloudwatch_exporter
+  become: true
+  roles:
+    - cloudwatch_exporter

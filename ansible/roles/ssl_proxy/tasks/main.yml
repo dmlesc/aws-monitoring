@@ -1,0 +1,44 @@
+---
+# file: roles/ssl_proxy/tasks/main.yml
+
+- name: install nginx
+  apt:
+    update_cache: yes
+    name: nginx
+    state: present
+
+- name: enable nginx service
+  systemd:
+    daemon_reload: yes
+    name: nginx
+    enabled: yes
+    masked: no
+  notify:
+    - restart nginx service
+
+- name: create /etc/nginx/ssl directory
+  file:
+    path: /etc/nginx/ssl
+    state: directory
+    mode: 0755
+
+- name: copy nginx.conf
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    owner: root
+    group: root
+    mode: 0644
+    backup: yes
+  notify:
+  - restart nginx service
+
+- name: copy htpasswd
+  copy:
+    src: htpasswd
+    dest: /etc/nginx/htpasswd
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+  - restart nginx service

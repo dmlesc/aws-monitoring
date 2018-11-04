@@ -1,0 +1,47 @@
+---
+# file: roles/cloudwatch_exporter/tasks/main.yml
+
+- name: install default-jre
+  apt:
+    name: default-jre
+    state: present
+
+- name: create /opt/cloudwatch_exporter directory
+  file:
+    path: /opt/cloudwatch_exporter
+    state: directory
+    mode: 0775
+
+- name: copy cloudwatch_exporter-0.1.1.jar
+  copy:
+    src: cloudwatch_exporter-0.1.1.jar
+    dest: /opt/cloudwatch_exporter/cloudwatch_exporter-0.1.1.jar
+    owner: root
+    group: root
+    mode: 0644
+    backup: no
+  notify:
+    - restart cloudwatch_exporter service
+
+- name: copy mathfactsprod.yml
+  copy:
+    src: mathfactsprod.yml
+    dest: /opt/cloudwatch_exporter/mathfactsprod.yml
+    owner: root
+    group: root
+    mode: 0644
+    backup: no
+  notify:
+    - restart cloudwatch_exporter service
+
+- name: copy systemd cloudwatch_exporter.service
+  template:
+    src: cloudwatch_exporter.service.j2
+    dest: /lib/systemd/system/cloudwatch_exporter.service
+    owner: root
+    group: root
+    mode: 0644
+    backup: no
+  notify:
+    - enable cloudwatch_exporter service
+    - restart cloudwatch_exporter service

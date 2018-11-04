@@ -1,0 +1,7 @@
+---
+# file: ingestor-role.yml
+
+- hosts: ingestor
+  become: true
+  roles:
+    - ingestor

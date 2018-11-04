@@ -1,0 +1,7 @@
+---
+# file: common.yml
+
+- hosts: imf-monitoring
+  become: true
+  roles:
+    - common

@@ -1,0 +1,7 @@
+---
+# file: prometheus-role.yml
+
+- hosts: prometheus
+  become: true
+  roles:
+    - prometheus

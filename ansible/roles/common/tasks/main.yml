@@ -1,0 +1,49 @@
+---
+# file: roles/common/tasks/main.yml
+
+- name: install htop
+  apt:
+    name: htop
+    state: present
+
+- name: install unzip
+  apt:
+    name: unzip
+    state: present
+
+- name: copy node_exporter tar.gz
+  copy:
+    src: "{{ node_exporter_ver }}.tar.gz"
+    dest: /opt/
+    owner: root
+    group: root
+    mode: 0644
+    backup: no
+
+- name: gunzip node_exporter tar.gz
+  command: gunzip -f "{{ node_exporter_ver }}.tar.gz"
+  args: 
+    chdir: /opt/
+
+- name: extract node_exporter tar
+  unarchive:
+    remote_src: yes
+    src: "/opt/{{ node_exporter_ver }}.tar"
+    dest: /opt/
+    owner: root
+    group: root
+  notify:
+    - restart node_exporter service
+
+- name: copy systemd node_exporter.service
+  template:
+    src: node_exporter.service.j2
+    dest: /lib/systemd/system/node_exporter.service
+    owner: root
+    group: root
+    mode: 0644
+    backup: no
+  notify:
+    - enable node_exporter service
+    - restart node_exporter service
+

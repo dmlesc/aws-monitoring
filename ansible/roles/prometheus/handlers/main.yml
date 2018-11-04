@@ -1,0 +1,14 @@
+---
+# file: roles/prometheus/handlers/main.yml
+
+- name: enable prometheus service
+  systemd:
+    daemon_reload: yes
+    name: prometheus
+    enabled: yes
+    masked: no
+
+- name: restart prometheus service
+  systemd:
+    name: prometheus
+    state: restarted

@@ -1,0 +1,14 @@
+{
+  "name": "mergor",
+  "version": "1.0.0",
+  "description": "",
+  "main": "mergor.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "me",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.238.1"
+  }
+}

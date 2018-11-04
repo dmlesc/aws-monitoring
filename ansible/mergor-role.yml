@@ -1,0 +1,7 @@
+---
+# file: mergor-role.yml
+
+- hosts: ingestor
+  become: true
+  roles:
+    - mergor

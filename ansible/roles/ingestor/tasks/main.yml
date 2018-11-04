@@ -1,0 +1,123 @@
+---
+# file: roles/ingestor/tasks/main.yml
+
+- name: create ingestor archive
+  become: false
+  archive:
+    path: "{{ ingestor_repo_path }}"
+    dest: ~/git/imf-monitoring/ansible/roles/ingestor/files/ingestor.tar
+  tags:
+    tar
+
+- name: create /opt/ingestor directory
+  file:
+    path: /opt/ingestor
+    state: directory
+    mode: 0775
+  tags:
+    install
+
+- name: create /opt/logs/imf/elb/portal directory
+  file:
+    path: /opt/logs/imf/elb/portal
+    state: directory
+    mode: 0775
+  tags:
+    install
+
+- name: create /opt/logs/imf/s3/datadocs directory
+  file:
+    path: /opt/logs/imf/s3/datadocs
+    state: directory
+    mode: 0775
+  tags:
+    install
+
+- name: copy ingestor .tar
+  copy:
+    src: ingestor.tar
+    dest: /opt/
+    owner: root
+    group: root
+    mode: 0644
+    backup: no
+  tags:
+    install
+
+- name: extract ingestor archive
+  unarchive:
+    remote_src: yes
+    src: /opt/ingestor.tar
+    dest: /opt/ingestor
+    owner: root
+    group: root
+  notify:
+    - restart ingestor service
+  tags:
+    install
+
+- name: copy systemd ingestor.service
+  template:
+    src: ingestor.service.j2
+    dest: /lib/systemd/system/ingestor.service
+    owner: root
+    group: root
+    mode: 0644
+    backup: no
+  notify:
+    - enable ingestor service
+    - restart ingestor service
+  tags:
+    install
+
+- name: copy ingestor.js
+  template:
+    src: "{{ ingestor_repo_path }}/ingestor.js"
+    dest: /opt/ingestor/ingestor.js
+    owner: root
+    group: root
+    mode: 0644
+    backup: no
+  notify:
+    - restart ingestor service
+  tags:
+    update
+
+- name: copy metrics.js
+  template:
+    src: "{{ ingestor_repo_path }}/metrics.js"
+    dest: /opt/ingestor/metrics.js
+    owner: root
+    group: root
+    mode: 0644
+    backup: no
+  notify:
+    - restart ingestor service
+  tags:
+    update
+
+- name: copy log.js
+  template:
+    src: "{{ ingestor_repo_path }}/log.js"
+    dest: /opt/ingestor/log.js
+    owner: root
+    group: root
+    mode: 0644
+    backup: no
+  notify:
+    - restart ingestor service
+  tags:
+    update
+
+- name: copy conf/env-local.js
+  template:
+    src: "{{ ingestor_repo_path }}/conf/env-local.js"
+    dest: /opt/ingestor/conf/env-local.js
+    owner: root
+    group: root
+    mode: 0644
+    backup: no
+  notify:
+    - restart ingestor service
+  tags:
+    update

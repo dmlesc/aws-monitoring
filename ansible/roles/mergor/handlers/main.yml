@@ -1,0 +1,14 @@
+---
+# file: roles/mergor/handlers/main.yml
+
+- name: enable mergor service
+  systemd:
+    daemon_reload: yes
+    name: mergor
+    enabled: yes
+    masked: no
+
+- name: restart mergor service
+  systemd:
+    name: mergor
+    state: restarted

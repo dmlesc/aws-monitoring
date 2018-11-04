@@ -1,0 +1,19 @@
+---
+# file: roles/kibana/handlers/main.yml
+
+- name: enable kibana service
+  systemd:
+    daemon_reload: yes
+    name: kibana
+    enabled: yes
+    masked: no
+
+- name: start kibana service
+  systemd:
+    name: kibana
+    state: started
+
+- name: restart kibana service
+  systemd:
+    name: kibana
+    state: restarted

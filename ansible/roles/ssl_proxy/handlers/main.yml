@@ -1,0 +1,12 @@
+---
+# file: roles/ssl_proxy/handlers/main.yml
+
+- name: start nginx service
+  systemd:
+    name: nginx
+    state: started
+
+- name: restart nginx service
+  systemd:
+    name: nginx
+    state: restarted

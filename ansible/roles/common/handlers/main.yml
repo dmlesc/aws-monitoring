@@ -1,0 +1,14 @@
+---
+# file: roles/common/handlers/main.yml
+
+- name: enable node_exporter service
+  systemd:
+    daemon_reload: yes
+    name: node_exporter
+    enabled: yes
+    masked: no
+
+- name: restart node_exporter service
+  systemd:
+    name: node_exporter
+    state: restarted

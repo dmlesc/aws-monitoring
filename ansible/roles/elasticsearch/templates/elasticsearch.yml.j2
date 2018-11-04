@@ -1,0 +1,6 @@
+cluster.name: imf-monitoring
+node.name: ${HOSTNAME}
+discovery.zen.ping.unicast.hosts: ["es0", "es1"]
+path.data: /vol0/es_data
+path.logs: /vol0/es_data/logs
+network.host: 0.0.0.0

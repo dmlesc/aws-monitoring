@@ -1,0 +1,14 @@
+---
+# file: roles/ingestor/handlers/main.yml
+
+- name: enable ingestor service
+  systemd:
+    daemon_reload: yes
+    name: ingestor
+    enabled: yes
+    masked: no
+
+- name: restart ingestor service
+  systemd:
+    name: ingestor
+    state: restarted

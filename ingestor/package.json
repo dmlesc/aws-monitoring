@@ -1,0 +1,16 @@
+{
+  "name": "ingestor",
+  "version": "1.0.0",
+  "main": "ingestor.js",
+  "dependencies": {
+    "aws-sdk": "^2.200.0",
+    "elasticsearch": "^14.2.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "me",
+  "license": "ISC",
+  "description": ""
+}

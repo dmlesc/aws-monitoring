@@ -1,0 +1,38 @@
+---
+# file: roles/grafana/tasks/main.yml
+
+- name: install grafana repo
+  apt_repository:
+    repo: deb https://packagecloud.io/grafana/stable/debian/ jessie main
+    state: present
+
+- name: add grafana Package Cloud key
+  apt_key:
+    url: "https://packagecloud.io/gpg.key"
+    state: present
+
+- name: install grafana
+  apt:
+    update_cache: yes
+    name: grafana
+    state: present
+
+- name: enable grafana-server service
+  systemd:
+    daemon_reload: yes
+    name: grafana-server
+    enabled: yes
+    masked: no
+  notify:
+    - start grafana-server service
+
+- name: copy grafana.ini file
+  copy:
+    src: grafana.ini
+    dest: /etc/grafana/grafana.ini
+    owner: root
+    group: grafana
+    mode: 0640  
+    backup: yes
+  notify:
+    - restart grafana-server service

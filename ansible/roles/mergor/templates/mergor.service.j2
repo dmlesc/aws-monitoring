@@ -1,0 +1,12 @@
+[Unit]
+Description=mergor
+After=network.target
+
+[Service]
+User=root
+ExecStart=/usr/bin/node mergor.js env-local
+WorkingDirectory=/opt/mergor
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,12 @@
+[Unit]
+Description=prometheus
+After=network.target
+
+[Service]
+User=root
+ExecStart=/opt/{{ prometheus_ver }}/prometheus --config.file={{ prometheus_data }}/prometheus.yml --storage.tsdb.path="{{ prometheus_data }}" --storage.tsdb.retention=365d 
+WorkingDirectory=/opt/{{ prometheus_ver }}
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

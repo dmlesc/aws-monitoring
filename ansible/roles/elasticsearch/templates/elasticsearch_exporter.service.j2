@@ -1,0 +1,12 @@
+[Unit]
+Description=elasticsearch_exporter
+After=network.target
+
+[Service]
+User=root
+ExecStart=/opt/{{ elasticsearch_exporter_ver }}/elasticsearch_exporter -es.uri "http://{{ ansible_default_ipv4.address }}:9200"
+WorkingDirectory=/opt/{{ elasticsearch_exporter_ver }}
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

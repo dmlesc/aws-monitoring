@@ -1,0 +1,663 @@
+=====
+ AWS
+=====
+
+SQS (2)
+  Queue Name: s3-bucket-log
+  Queue Name: elb-app-log
+  Region: US East (N. Virginia)
+  Standard Queue
+  Configure Queue
+    defaults
+  Create Queue
+
+  Permissions > Add a Permission
+    Effect: [*] Allow
+    Principal: [*] Everybody
+    Actions: [*] SendMessage
+
+IAM
+  Create policy
+    Service: S3
+    Actions
+      Access level groups
+        List
+          [*] List
+          Read
+            [*] GetObject
+          Write
+            [*] DeleteObject
+            [*] PutObject
+    Resources
+      bucket > Add ARN
+        ARN: arn:aws:s3:::app-logs
+      [*] any object
+
+    Service: SQS
+    Actions
+      Access level groups
+        List
+          [*] List
+          Read
+            [*] GetQueueAttributes
+            [*] ReceiveMessage
+          Write
+            [*] DeleteMessage
+    Resources
+      queue > Add ARN
+        ARN: arn:aws:sqs:us-east-1:807358656365:elb-app-log
+        ARN: arn:aws:sqs:us-east-1:807358656365:s3-bucket-log
+
+    Review Policy
+      Name: logs_ingestor
+      Create policy
+
+  Add user
+    User name: logs_ingestor
+    Access type: [*] Programatic access
+
+    Create group
+      Name: logs_ingestor
+      Policy name: logs_ingestor
+
+S3
+  app-logs
+    Properties > Events > + Add notification
+      Name: s3-bucket-log
+      Events: [*] ObjectCreate(All)
+      Prefix: s3/app-bucket/
+      Send to: SQS Queue
+      SQS: s3-bucket-log
+      Save
+
+      Name: elb-app-log
+      Events: [*] ObjectCreate(All)
+      Prefix: elb/app-log/
+      Send to: SQS Queue
+      SQS: elb-app-log
+      Save
+
+  app-bucket
+    Server access logging
+      [*] Enable logging
+        Target bucket: app-logs
+        Target prefix: s3/app-bucket/
+
+EC2 > Load Balancers
+  awseb-...
+    Attributes > Configure Access Logs
+      [*] Enable access logs
+      Interval: 5 minutes
+      S3 location: s3://app-logs/elb/app-bucket
+      [*] Create this location for me
+
+
+
+======
+ ctrl
+======
+
+ssh-agent bash
+ssh-add ~/.ssh/id_...
+ssh-copy-id user@[c1, esX]
+ssh [c1, esX]
+
+
+=========
+ c1, esX
+=========
+
+sudo visudo
+  user ALL=(ALL) NOPASSWD: ALL
+sudo su
+apt install python2.7
+ln -s /usr/bin/python2.7 /usr/bin/python
+
+fdisk -l
+wipefs -af /dev/sda
+
+apt install zfsutils-linux
+ll /dev/disk/by-id/
+zpool create -f vol0 /dev/disk/by-id/ata-...
+zfs set compression=lz4 vol0
+zpool status
+zfs get compression
+
+
+=====
+ esX
+=====
+
+zfs create vol0/es_data
+nano /etc/sysctl.conf
+  vm.max_map_count=262144
+
+nano /etc/hosts
+  10.1.0.123   es0
+  10.1.0.124   es1
+
+reboot
+
+
+====
+ c1
+====
+
+sudo su
+apt install bridge-utils
+cd /etc/network
+mv interfaces interfaces.dhcp
+nano interfaces
+  auto lo
+  iface lo inet loopback
+
+  auto br0
+  iface br0 inet static
+  address 10.1.0.119
+  netmask 255.255.252.0
+  gateway 10.1.0.1
+  dns-nameservers 10.1.100.10 10.1.100.11
+  bridge_ports enp3s0
+  bridge_stp off
+  bridge_fd 0
+  bridge_maxwait 0
+
+reboot
+
+
+sudo su
+apt remove --purge lxd lxd-client
+snap install lxd
+nano ~/.bashrc
+  export PATH=$PATH:/snap/bin:/var/lib/snapd/snap/bin
+
+logout, log back in
+
+lxd --version
+  3.0.0
+lxd init
+  Would you like to use LXD clustering? (yes/no) [default=no]:
+  Do you want to configure a new storage pool? (yes/no) [default=yes]:
+  Name of the new storage pool [default=default]:
+  Name of the storage backend to use (btrfs, ceph, dir, lvm, zfs) [default=zfs]:
+  Create a new ZFS pool? (yes/no) [default=yes]: no
+  Name of the existing ZFS pool or dataset: vol0
+  Would you like to connect to a MAAS server? (yes/no) [default=no]:
+  Would you like to create a new local network bridge? (yes/no) [default=yes]: no
+  Would you like to configure LXD to use an existing bridge or host interface? (yes/no) [default=no]: yes
+  Name of the existing bridge or host interface: br0
+  Would you like LXD to be available over the network? (yes/no) [default=no]:
+  Would you like stale cached images to be updated automatically? (yes/no) [default=yes]
+  Would you like a YAML "lxd init" preseed to be printed? (yes/no) [default=no]:
+
+
+lxc launch ubuntu:16.04 prom0
+lxc config set prom0 limits.cpu 2
+lxc config set prom0 limits.memory 4GB
+lxc exec prom0 bash
+
+lxc launch ubuntu:16.04 viz0
+lxc config set viz0 limits.cpu 2
+lxc config set viz0 limits.memory 2GB
+lxc exec viz0 bash
+
+lxc launch ubuntu:16.04 esproxy0
+lxc config set esproxy0 limits.cpu 1
+lxc config set esproxy0 limits.memory 1GB
+lxc exec esproxy0 bash
+
+lxc launch ubuntu:16.04 ingest0
+lxc config set ingest0 limits.cpu 2
+lxc config set ingest0 limits.memory 2GB
+lxc exec ingest0 bash
+
+
+
+================================
+ prom0, viz0, esproxy0, ingest0
+================================
+
+apt update
+apt upgrade
+apt autoremove
+
+adduser dml
+deluser ubuntu --remove-all-files
+
+visudo
+  dml ALL=(ALL) NOPASSWD: ALL
+apt install python2.7
+ln -s /usr/bin/python2.7 /usr/bin/python
+
+nano /etc/network/interfaces.d/50-cloud-init.cfg
+  auto eth0
+  iface eth0 inet static
+  address 10.1.0.XXX
+  netmask 255.255.252.0
+  gateway 10.1.0.1
+  dns-nameservers 10.1.100.10 10.1.100.11
+
+su dml
+cd ~
+mkdir .ssh
+chmod 700 .ssh
+cd .ssh
+nano authorized_keys
+  paste key
+chmod 600 authorized_keys
+
+exit
+reboot
+
+
+=======
+ prom0
+=======
+
+IP: 10.1.0.115
+
+mkdir /opt/prom_data
+
+nano /etc/hosts
+  10.1.0.114   esproxy0
+  10.1.0.116   viz0
+  10.1.0.119   c1
+  10.1.0.121   ingest0
+  10.1.0.123   es0
+  10.1.0.124   es1
+
+
+==========
+ esproxy0
+==========
+
+IP: 10.1.0.114
+
+nano /etc/hosts
+  10.1.0.123   es0
+  10.1.0.124   es1
+
+
+==========
+ ingest0
+==========
+
+sudo su
+cd ~
+mkdir .aws
+cd .aws
+nano credentials
+  [logs_ingestor]
+  aws_access_key_id = <id>
+  aws_secret_access_key = <secret>
+
+exit
+
+
+======
+ ctrl
+======
+
+cd ~/git/aws-monitoring/ansible/
+
+ansible-playbook -i env-local/ common.yml
+ansible-playbook -i env-local/ prometheus-role.yml
+ansible-playbook -i env-local/ elasticsearch-role.yml
+ansible-playbook -i env-local/ esproxy-role.yml
+ansible-playbook -i env-local/ grafana-role.yml
+ansible-playbook -i env-local/ kibana-role.yml
+ansible-playbook -i env-local/ nodejs-role.yml
+ansible-playbook -i env-local/ -l dml0 -t "tar" ingestor-role.yml
+ansible-playbook -i env-local/ -l ingest0 -t "install" ingestor-role.yml
+ansible-playbook -i env-local/ -l ingest0 -t "update" ingestor-role.yml
+
+cd ../ingestor/
+
+node manage_elastic/createTemplate-ELB.js env-local
+node manage_elastic/createTemplate-S3.js env-local
+
+ansible-playbook -i env-local/ -l dml0 -t "tar" mergor-role.yml
+ansible-playbook -i env-local/ -l ingest0 -t "install" mergor-role.yml
+ansible-playbook -i env-local/ -l ingest0 -t "update" mergor-role.yml
+
+ansible-playbook -i env-local/ cloudwatch_exporter-role.yml
+
+ansible-playbook -i env-local/ ssl_proxy-role.yml
+
+
+======
+ viz0
+======
+
+IP: 10.1.0.116
+
+nano /etc/hosts
+  10.1.0.114   esproxy0
+  10.1.0.115   prom0
+
+http://viz0:3000/login
+  admin > Profile > Change Password
+
+  Add data source
+    Name: prometheus
+    Type: Prometheus
+    Url: http://prom0:9090
+    Access: proxy
+
+    Name: elb-app
+    Type: Elasticsearch
+    Url: http://esproxy0:9200
+    Access: proxy
+    Index name: [elb-app-]YYYY.MM
+    Pattern: Monthly
+    Time field name: timestamp
+    Version: 5.x
+
+    Name: s3-bucket
+    Type: Elasticsearch
+    Url: http://esproxy0:9200
+    Access: proxy
+    Index name: [s3-bucket-]YYYY.MM
+    Pattern: Monthly
+    Time field name: timestamp
+    Version: 5.x
+
+  Dashboards
+    Import all from: /ansible/roles/grafana/files/dashboards
+
+http://viz0:5601/
+  Management
+    Index Patterns
+      elb-app-*
+      s3-bucket-*
+
+
+========
+ mergor
+========
+
+
+
+=====================
+ cloudwatch_exporter
+=====================
+
+AWS
+  IAM > Add user
+    name: cloudwatch_exporter
+    [*] Programatic access
+    group: NOC - CloudWatchReadOnlyAccess
+
+
+cd ~
+mkdir .aws
+nano .aws/credentials
+  [default]
+  aws_access_key_id = ABC123
+  aws_secret_access_key = ASDFASDF
+
+
+java -jar cloudwatch_exporter-0.1.1-SNAPSHOT-jar-with-dependencies.jar 9106 mathfactsprod.yml
+
+
+ELB (by LoadBalanerName)
+  HealthyHostCount
+  UnHealthyHostCount
+  RequestCount
+  Latency
+  EstimatedALBActiveConnectionCount
+  EstimatedALBNewConnectionCount
+
+ElasticBeanstalk (by EnvironmentName, InstanceId)
+  ApplicationLatencyP10
+  ApplicationLatencyP50
+  ApplicationLatencyP90
+  ApplicationLatencyP99
+  ApplicationRequests2xx
+  ApplicationRequests3xx
+  ApplicationRequests4xx
+  ApplicationRequests5xx
+  ApplicationRequestsTotal
+  CPUIowait
+  CPUSystem
+  CPUUser
+
+
+93 * 60 * 24 = 133920 requests per day
+133920 / 1000 / 100 = $1.34 per day
+$1.34 * 30 = $40.17 per month
+$40.17 * 12 = $482 per year
+
+
+===========
+ ssl_proxy
+===========
+
+- c1 -
+
+nano /etc/hosts
+  10.1.0.116   viz0
+
+scp sub.domain.com.wildcard.private.rsa c1:~/
+scp sub.domain.com.wildcard.public.bundle.crt c1:~/
+
+ssh c1
+sudo su
+chown root:root sub.domain.com.wildcard.p*
+mv sub.domain.com.wildcard.p* /etc/nginx/ssl/
+
+service nginx restart
+
+https://sub.domain.com:3443/
+https://sub.domain.com:5643/
+
+apt install apache2-utils
+htpasswd -c htpasswd kibana
+
+
+============
+ AWS deploy
+============
+
+t2.xlarge = 133.63 --- 83.95 * 3 = 251.85 * 12 = 3022.20
+m5.xlarge = 138.24 --- 89.79 * 3 = 269.37 * 12 = 3232.44
+c5.xlarge = 122.40 --- 78.11 * 3 = 234.33 * 12 = 2811.96
+
+
+VPC
+  Your VPCs
+    Create VPC
+      Name tag: aws-monitoring
+      IPv4 CIDR block: 10.0.0.0/22
+      Tenancy: Default
+
+  Subnets
+    Create Subnet
+      Name tag: aws-monitoring - us-east-1d
+      VPC: aws-monitoring
+      Availability Zone: us-east-1d
+      IPv4 CIDR block: 10.0.0.0/22
+
+  Internet Gateways
+    Create internet gateway
+      Name tag: aws-monitoring - ig
+      Attach to VPC
+        VPC: aws-monitoring
+
+  Route Tables
+    Rename: aws-monitoring - rt
+      Subnet Associations
+        aws-monitoring - us-east-1d
+      Routes
+        Add
+          0.0.0.0/0  igw-3f94da47
+
+EC2
+  Launch Instance
+    AMI
+      Select: Ubuntu Server 16.04 LTS (HVM), SSD Volume Type - ami-a4dc46db
+    Instance Type
+      [*] c5.xlarge
+    Configure
+      Number of instances: 3
+      Network: aws-monitoring
+      Subnet: aws-monitoring - us-east-1d
+      [*] Protect against accidental termination
+    Storage
+      Add New Volume
+        Device: /dev/sdb
+        Size (GiB): 200
+    Tags
+      Name: aws-monitoring
+    Security Group
+      [*] Create a new security group
+      Name: aws-monitoring - sg
+      Description: aws-monitoring - sg
+
+      SSH      TCP     22   My IP
+      Custom   TCP   3443   My IP         grafana
+      Custom   TCP   5643   My IP         kibana
+      All      TCP   ALL    10.0.0.0/22   local
+
+    Key pair
+      name: aws-monitoring
+
+  Rename Instances
+    aws-monitoring - c1
+    aws-monitoring - es0
+    aws-monitoring - es1
+
+  Elastic IPs
+    Allocate new address
+    Associate address
+      [*] Instance
+      Instance: aws-monitoring - c1
+      Private IP: 10.0.1.98
+
+      Allocate new address
+      Associate address
+        [*] Instance
+        Instance: aws-monitoring - es0
+        Private IP: 10.0.3.128
+
+      Allocate new address
+      Associate address
+        [*] Instance
+        Instance: aws-monitoring - es1
+        Private IP: 10.0.1.8
+
+
+chmod 400 ~/.ssh/aws-monitoring.pem
+scp ~/.ssh/aws-monitoring.pem ubuntu@54.236.173.124:~/.ssh/
+
+ssh-agent bash
+ssh-add ~/.ssh/aws-monitoring.pem
+ssh ubuntu@54.236.173.124
+
+
+- c1 -
+
+nano /etc/hostname
+  c1
+
+nano /etc/hosts
+  127.0.1.1    c1
+  127.0.1.1    c1.ec2.internal
+
+  127.0.1.1    esproxy0
+  127.0.1.1    esproxy0.ec2.internal
+  127.0.1.1    viz0
+  127.0.1.1    viz0.ec2.internal
+  10.0.3.128   es0
+  10.0.3.128   es0.ec2.internal
+  10.0.1.8     es1
+  10.0.1.8     es1.ec2.internal
+
+
+
+-- deviations --
+
+zpool create -f vol0 /dev/nvme1n1
+
+mkdir /opt/prom_data
+zfs create vol0/prom_data
+zfs set mountpoint=/opt/prom_data vol0/prom_data
+
+mkdir /opt/logs
+zfs create vol0/logs
+zfs set mountpoint=/opt/logs vol0/logs
+
+nano ~/.ssh/config.aws-monitoring
+  Host *.ec2.internal
+    User ubuntu
+    IdentityFile /home/dml/.ssh/aws-monitoring.pem
+    ProxyCommand ssh aws-c1 -W %h:%p
+  Host aws-c1
+    User ubuntu
+    IdentityFile /home/dml/.ssh/aws-monitoring.pem
+    HostName 54.236.173.124
+
+ln -s ~/.ssh/config.aws-monitoring ~/.ssh/config
+
+
+ansible-playbook -i env-aws/ common.yml
+ansible-playbook -i env-aws/ prometheus-role.yml
+ansible-playbook -i env-aws/ elasticsearch-role.yml
+ansible-playbook -i env-aws/ esproxy-role.yml
+ansible-playbook -i env-aws/ grafana-role.yml
+ansible-playbook -i env-aws/ kibana-role.yml
+ansible-playbook -i env-aws/ nodejs-role.yml
+
+
+ssh ubuntu@54.236.173.124
+mkdir git
+cd git
+git clone https://github.com/dmlesc/aws-monitoring.git
+cd aws-monitoring/ingestor/
+npm install
+node manage_elastic/createTemplate-ELB.js env-local
+node manage_elastic/createTemplate-S3.js env-local
+
+
+ansible-playbook -i env-aws/ -c local -t "tar" ingestor-role.yml
+ansible-playbook -i env-aws/ -l c1.ec2.internal -t "install" ingestor-role.yml
+ansible-playbook -i env-aws/ -l c1.ec2.internal -t "update" ingestor-role.yml
+
+ansible-playbook -i env-aws/ -c local -t "tar" mergor-role.yml
+ansible-playbook -i env-aws/ -l c1.ec2.internal -t "install" mergor-role.yml
+ansible-playbook -i env-aws/ -l c1.ec2.internal -t "update" mergor-role.yml
+
+ansible-playbook -i env-aws/ cloudwatch_exporter-role.yml
+
+service ingestor stop
+service kibana stop
+ansible-playbook -i env-aws/ ssl_proxy-role.yml
+
+
+======================
+======================
+
+lxc list
+lxc network list
+
+lxc stop prom0
+
+
+apt list --upgradable
+
+apt-mark hold kibana
+apt-mark unhold kibana
+
+apt-mark hold elasticsearch
+apt-mark unhold elasticsearch
+
+apt-mark hold nodejs
+
+
+
+lxc profile device remove default eth0
+lxc profile device set default eth0 parent br0
+lxc network attach br0 prom0 default eth0
+
+
+ansible-playbook -i env-local/ -l "es0,es1" common.yml

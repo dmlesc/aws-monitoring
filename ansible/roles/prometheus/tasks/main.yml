@@ -1,0 +1,54 @@
+---
+# file: roles/prometheus/tasks/main.yml
+
+- name: install unzip
+  apt:
+    name: unzip
+    state: present
+
+- name: copy prometheus tar.gz
+  copy:
+    src: "{{ prometheus_ver }}.tar.gz"
+    dest: /opt/
+    owner: root
+    group: root
+    mode: 0644
+    backup: no
+
+- name: gunzip prometheus tar.gz
+  command: gunzip -f "{{ prometheus_ver }}.tar.gz"
+  args: 
+    chdir: /opt/
+
+- name: extract prometheus tar
+  unarchive:
+    remote_src: yes
+    src: "/opt/{{ prometheus_ver }}.tar"
+    dest: /opt/
+    owner: root
+    group: root
+  notify:
+    - restart prometheus service
+
+- name: copy prometheus.yml
+  template:
+    src: prometheus.yml
+    dest: "{{ prometheus_data }}/prometheus.yml"
+    owner: root
+    group: root
+    mode: 0644
+    backup: yes
+  notify:
+    - restart prometheus service
+
+- name: copy systemd prometheus.service
+  template:
+    src: prometheus.service.j2
+    dest: /lib/systemd/system/prometheus.service
+    owner: root
+    group: root
+    mode: 0644
+    backup: no
+  notify:
+    - enable prometheus service
+    - restart prometheus service

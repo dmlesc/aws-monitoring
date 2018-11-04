@@ -1,0 +1,92 @@
+---
+region: us-east-1
+metrics:
+- aws_namespace: AWS/ELB
+  aws_metric_name: HealthyHostCount
+  aws_dimensions: [LoadBalancerName]
+  aws_statistics: [Average]
+
+- aws_namespace: AWS/ELB
+  aws_metric_name: UnHealthyHostCount
+  aws_dimensions: [LoadBalancerName]
+  aws_statistics: [Average]
+
+- aws_namespace: AWS/ELB
+  aws_metric_name: RequestCount
+  aws_dimensions: [LoadBalancerName]
+  aws_statistics: [Sum]
+
+- aws_namespace: AWS/ELB
+  aws_metric_name: Latency
+  aws_dimensions: [LoadBalancerName]
+  aws_statistics: [Average]
+
+- aws_namespace: AWS/ELB
+  aws_metric_name: EstimatedALBActiveConnectionCount
+  aws_dimensions: [LoadBalancerName]
+  aws_statistics: [Sum]
+
+- aws_namespace: AWS/ELB
+  aws_metric_name: EstimatedALBNewConnectionCount
+  aws_dimensions: [LoadBalancerName]
+  aws_statistics: [Sum]
+
+- aws_namespace: AWS/ElasticBeanstalk
+  aws_metric_name: ApplicationLatencyP10
+  aws_dimensions: [EnvironmentName, InstanceId]
+  aws_statistics: [Average]
+
+- aws_namespace: AWS/ElasticBeanstalk
+  aws_metric_name: ApplicationLatencyP50
+  aws_dimensions: [EnvironmentName, InstanceId]
+  aws_statistics: [Average]
+
+- aws_namespace: AWS/ElasticBeanstalk
+  aws_metric_name: ApplicationLatencyP90
+  aws_dimensions: [EnvironmentName, InstanceId]
+  aws_statistics: [Average]
+
+- aws_namespace: AWS/ElasticBeanstalk
+  aws_metric_name: ApplicationLatencyP99
+  aws_dimensions: [EnvironmentName, InstanceId]
+  aws_statistics: [Average]
+
+- aws_namespace: AWS/ElasticBeanstalk
+  aws_metric_name: ApplicationRequests2xx
+  aws_dimensions: [EnvironmentName, InstanceId]
+  aws_statistics: [Sum]
+
+- aws_namespace: AWS/ElasticBeanstalk
+  aws_metric_name: ApplicationRequests3xx
+  aws_dimensions: [EnvironmentName, InstanceId]
+  aws_statistics: [Sum]
+
+- aws_namespace: AWS/ElasticBeanstalk
+  aws_metric_name: ApplicationRequests4xx
+  aws_dimensions: [EnvironmentName, InstanceId]
+  aws_statistics: [Sum]
+
+- aws_namespace: AWS/ElasticBeanstalk
+  aws_metric_name: ApplicationRequests5xx
+  aws_dimensions: [EnvironmentName, InstanceId]
+  aws_statistics: [Sum]  
+
+- aws_namespace: AWS/ElasticBeanstalk
+  aws_metric_name: ApplicationRequestsTotal
+  aws_dimensions: [EnvironmentName, InstanceId]
+  aws_statistics: [Sum]  
+
+- aws_namespace: AWS/ElasticBeanstalk
+  aws_metric_name: CPUIowait
+  aws_dimensions: [EnvironmentName, InstanceId]
+  aws_statistics: [Average]  
+
+- aws_namespace: AWS/ElasticBeanstalk
+  aws_metric_name: CPUSystem
+  aws_dimensions: [EnvironmentName, InstanceId]
+  aws_statistics: [Average]  
+
+- aws_namespace: AWS/ElasticBeanstalk
+  aws_metric_name: CPUUser
+  aws_dimensions: [EnvironmentName, InstanceId]
+  aws_statistics: [Average]

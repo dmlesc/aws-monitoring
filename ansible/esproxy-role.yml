@@ -1,0 +1,7 @@
+---
+# file: esproxy-role.yml
+
+- hosts: esproxy
+  become: true
+  roles:
+    - esproxy

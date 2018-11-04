@@ -1,0 +1,94 @@
+---
+# file: roles/elasticsearch/tasks/main.yml
+
+- name: install default-jre
+  apt:
+    name: default-jre
+    state: present
+
+- name: install apt-transport-https
+  apt:
+    name: apt-transport-https
+    state: present
+
+- name: Add Elasticsearch public signing key
+  apt_key:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+
+- name: add Elastic repository
+  apt_repository:
+    repo: deb https://artifacts.elastic.co/packages/6.x/apt stable main
+    state: present
+    filename: '/etc/apt/sources.list.d/elastic-6.x.list'
+
+- name: install elasticsearch
+  apt:
+    update_cache: yes
+    name: elasticsearch
+    state: present
+  notify:
+    - enable elasticsearch service
+
+- name: change ownership es_data
+  file:
+    path: /vol0/es_data/
+    owner: elasticsearch
+    group: elasticsearch
+
+- name: copy elasticsearch.yml
+  template:
+    src: elasticsearch.yml.j2
+    dest: /etc/elasticsearch/elasticsearch.yml
+    owner: root
+    group: elasticsearch
+    mode: 0660
+    backup: yes
+  notify:
+    - restart elasticsearch service
+
+- name: copy jvm.options
+  copy:
+    src: jvm.options
+    dest: /etc/elasticsearch/jvm.options
+    owner: root
+    group: elasticsearch
+    mode: 0660
+    backup: yes
+  notify:
+    - restart elasticsearch service
+
+- name: copy elasticsearch_exporter tar.gz
+  copy:
+    src: "{{ elasticsearch_exporter_ver }}.tar.gz"
+    dest: /opt/
+    owner: root
+    group: root
+    mode: 0644
+    backup: no
+
+- name: gunzip elasticsearch_exporter tar.gz
+  command: gunzip -f "{{ elasticsearch_exporter_ver }}.tar.gz"
+  args: 
+    chdir: /opt/
+
+
+- name: extract elasticsearch_exporter tar
+  unarchive:
+    remote_src: yes
+    src: "/opt/{{ elasticsearch_exporter_ver }}.tar"
+    dest: /opt/
+    owner: root
+    group: root
+
+- name: copy systemd elasticsearch_exporter.service
+  template:
+    src: elasticsearch_exporter.service.j2
+    dest: /lib/systemd/system/elasticsearch_exporter.service
+    owner: root
+    group: root
+    mode: 0644
+    backup: no
+  notify:
+    - enable elasticsearch_exporter service
+    - restart elasticsearch_exporter service

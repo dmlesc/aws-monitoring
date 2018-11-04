@@ -1,0 +1,12 @@
+[Unit]
+Description=node_exporter
+After=network.target
+
+[Service]
+User=root
+ExecStart=/opt/{{ node_exporter_ver }}/node_exporter --no-collector.arp --no-collector.bcache --no-collector.conntrack --no-collector.edac --no-collector.entropy --no-collector.hwmon --no-collector.infiniband --no-collector.ipvs --no-collector.loadavg --no-collector.mdadm --no-collector.netstat --no-collector.sockstat --no-collector.stat --no-collector.textfile --no-collector.time --no-collector.uname --no-collector.vmstat --no-collector.wifi --no-collector.xfs --no-collector.timex
+WorkingDirectory=/opt/{{ node_exporter_ver }}
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

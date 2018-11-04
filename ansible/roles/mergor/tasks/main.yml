@@ -1,0 +1,121 @@
+---
+# file: roles/mergor/tasks/main.yml
+
+- name: create mergor archive
+  become: false
+  archive:
+    path: "{{ mergor_repo_path }}"
+    dest: ~/git/imf-monitoring/ansible/roles/mergor/files/mergor.tar
+  tags:
+    tar
+
+- name: create /opt/mergor directory
+  file:
+    path: /opt/mergor
+    state: directory
+    mode: 0775
+  tags:
+    install
+
+- name: create /opt/logs/archive/imf/elb/portal/ directory
+  file:
+    path: /opt/logs/archive/imf/elb/portal/
+    state: directory
+    mode: 0775
+  tags:
+    install
+
+- name: create /opt/logs/archive/imf/s3/datadocs/ directory
+  file:
+    path: /opt/logs/archive/imf/s3/datadocs/
+    state: directory
+    mode: 0775
+  tags:
+    install
+
+- name: copy mergor .tar
+  copy:
+    src: mergor.tar
+    dest: /opt/
+    owner: root
+    group: root
+    mode: 0644
+    backup: no
+  tags:
+    install
+
+- name: extract mergor archive
+  unarchive:
+    remote_src: yes
+    src: /opt/mergor.tar
+    dest: /opt/mergor
+    owner: root
+    group: root
+  tags:
+    install
+
+- name: copy systemd mergor.service
+  template:
+    src: mergor.service.j2
+    dest: /lib/systemd/system/mergor.service
+    owner: root
+    group: root
+    mode: 0644
+    backup: no
+  notify:
+    - enable mergor service
+    - restart mergor service
+  tags:
+    install
+
+- name: copy mergor.js
+  template:
+    src: "{{ mergor_repo_path }}/mergor.js"
+    dest: /opt/mergor/mergor.js
+    owner: root
+    group: root
+    mode: 0644
+    backup: no
+  notify:
+    - restart mergor service
+  tags:
+    update
+
+- name: copy metrics.js
+  template:
+    src: "{{ mergor_repo_path }}/metrics.js"
+    dest: /opt/mergor/metrics.js
+    owner: root
+    group: root
+    mode: 0644
+    backup: no
+  notify:
+    - restart mergor service
+  tags:
+    update
+
+- name: copy log.js
+  template:
+    src: "{{ mergor_repo_path }}/log.js"
+    dest: /opt/mergor/log.js
+    owner: root
+    group: root
+    mode: 0644
+    backup: no
+  notify:
+    - restart mergor service
+  tags:
+    update
+
+- name: copy conf/env-local.js
+  template:
+    src: "{{ mergor_repo_path }}/conf/env-local.js"
+    dest: /opt/mergor/conf/env-local.js
+    owner: root
+    group: root
+    mode: 0644
+    backup: no
+  notify:
+    - restart mergor service
+  tags:
+    update

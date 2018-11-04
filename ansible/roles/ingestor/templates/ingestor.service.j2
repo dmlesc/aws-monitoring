@@ -1,0 +1,12 @@
+[Unit]
+Description=ingestor
+After=network.target
+
+[Service]
+User=root
+ExecStart=/usr/bin/node ingestor.js env-local
+WorkingDirectory=/opt/ingestor
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

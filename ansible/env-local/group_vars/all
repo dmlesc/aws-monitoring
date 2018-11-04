@@ -1,0 +1,7 @@
+node_exporter_ver: node_exporter-0.15.2.linux-amd64
+prometheus_ver: prometheus-2.1.0.linux-amd64
+prometheus_data: /opt/prom_data
+elasticsearch_exporter_ver: elasticsearch_exporter-1.0.2.linux-amd64
+es_proxy: esproxy0
+ingestor_repo_path: ~/git/imf-monitoring/ingestor/
+mergor_repo_path: ~/git/imf-monitoring/mergor/

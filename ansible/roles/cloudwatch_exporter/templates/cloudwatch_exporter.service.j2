@@ -1,0 +1,12 @@
+[Unit]
+Description=cloudwatch_exporter
+After=network.target
+
+[Service]
+User=root
+ExecStart=/usr/bin/java -jar cloudwatch_exporter-0.1.1.jar 9106 mathfactsprod.yml
+WorkingDirectory=/opt/cloudwatch_exporter
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,14 @@
+---
+# file: roles/cloudwatch_exporter/handlers/main.yml
+
+- name: enable cloudwatch_exporter service
+  systemd:
+    daemon_reload: yes
+    name: cloudwatch_exporter
+    enabled: yes
+    masked: no
+
+- name: restart cloudwatch_exporter service
+  systemd:
+    name: cloudwatch_exporter
+    state: restarted

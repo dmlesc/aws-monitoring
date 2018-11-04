@@ -1,0 +1,7 @@
+---
+# file: elasticsearch-role.yml
+
+- hosts: elasticsearch
+  become: true
+  roles:
+    - elasticsearch

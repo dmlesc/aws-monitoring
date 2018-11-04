@@ -1,0 +1,7 @@
+---
+# file: ssl_proxy-role.yml
+
+- hosts: ssl_proxy
+  become: true
+  roles:
+    - ssl_proxy
